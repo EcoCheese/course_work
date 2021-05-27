@@ -10,7 +10,9 @@
 #include <filesystem>
 #include <vector>
 #include <map>
+#include <thread>
 #include <sstream>
+
 
 using namespace std;
 
@@ -50,16 +52,14 @@ string delete_punctuation(string line){
     return line;
 }
 
-
-void serial_ii(string path){
-    string line;
+void open_serial_files(string path, myStruct ms){
     
-    myStruct w;
+    string line;
     
     for(auto& p: std::__fs::filesystem::recursive_directory_iterator(path)) {
         
         ifstream myfile (p.path());
-        w.path = p.path();
+        ms.path = p.path();
         
         if (myfile.is_open()) {
             
@@ -72,19 +72,121 @@ void serial_ii(string path){
             
             while (sstr >> word) {
                 if (word != "br" && !word.empty() && word != "\0"){
-                    w.position = itr;
-                    dictionary[word].push_back(w);
+                    ms.position = itr;
+                    dictionary[word].push_back(ms);
                     itr++;
                 }
             }
             
+            myfile.close();
             
         } else {
             cout << "cannot open file" << endl;
         }
     }
+}
+
+void something (string path, myStruct ms) {
     
-    print_map(dictionary);
+    string line;
+    ifstream myfile (path);
+    ms.path = path;
+    
+    if (myfile.is_open()) {
+        
+        getline(myfile, line);
+
+        line = delete_punctuation(line);
+        int itr = 1;
+        string word = "";
+        stringstream sstr(line);
+        
+        while (sstr >> word) {
+            if (word != "br" && !word.empty() && word != "\0"){
+                ms.position = itr;
+                dictionary[word].push_back(ms);
+                itr++;
+            }
+        }
+        
+        myfile.close();
+        
+    } else {
+        cout << "cannot open file" << endl;
+    }
+    
+}
+
+struct INPUT {
+    string path;
+    myStruct ms;
+};
+
+void *newFunc(void * arguments){
+    
+    struct INPUT *in = (struct INPUT *)arguments;
+    
+    string line;
+    ifstream myfile (in->path);
+    in->ms.path = in->path;
+    
+    if (myfile.is_open()) {
+        
+        getline(myfile, line);
+
+        line = delete_punctuation(line);
+        int itr = 1;
+        string word = "";
+        stringstream sstr(line);
+        
+        while (sstr >> word) {
+            if (word != "br" && !word.empty() && word != "\0"){
+                in->ms.position = itr;
+                dictionary[word].push_back(in->ms);
+                itr++;
+            }
+        }
+        
+        myfile.close();
+        
+    } else {
+        cout << "cannot open file" << endl;
+    }
+    
+    return NULL;
+}
+
+
+
+void multi(myStruct ms, string path){
+    
+    pthread_t threads[2];
+    
+    struct INPUT in;
+    
+    
+    int rc, end, n = 2;
+    vector<string>* Paths = new vector<string>;
+
+    for (auto& p : std::__fs::filesystem::directory_iterator(path)){
+        Paths->push_back(p.path().string());
+    }
+    
+    
+    
+    for(int i = 0; i < 2; i++){
+        in.path = Paths->at(i);
+        rc = pthread_create(&threads[i], NULL, &newFunc, (void *)&in);
+        if (rc != 0) {
+            printf("Thread creation failed");
+            exit(-1);
+        }
+    }
+    
+    for (int i = 0; i < 2; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
 }
 
 void find_query (string query) {
@@ -108,21 +210,30 @@ int main(int argc, const char * argv[]) {
     int var = 0;
     bool created = false;
     string query = "";
+    myStruct w;
     
     
     while (true) {
         
-        cout << endl << "Choose variant:\n\t1 - serial\n\t2 - find query" << endl;
+        cout << endl << "Choose variant:\n\t1 - serial\n\t2 - multi\n\t3 - find query" << endl;
         
         cin >> var;
         
         switch (var) {
             case 1:
-                serial_ii(path);
+                
+                open_serial_files(path, w);
+                print_map(dictionary);
                 created = true;
                 break;
                 
             case 2:
+                multi(w, path);
+                print_map(dictionary);
+                created = true;
+                break;
+                
+            case 3:
                 
                 if (created) {
                     cout << "Enter query: ";
