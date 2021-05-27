@@ -13,7 +13,6 @@
 #include <thread>
 #include <sstream>
 
-
 using namespace std;
 
 
@@ -23,6 +22,7 @@ struct myStruct {
 };
 
 map<string,vector<myStruct>> dictionary;
+//pthread_mutex_t m;
 
 
 void print_map (map <string, vector <myStruct> > dict) {
@@ -51,6 +51,8 @@ string delete_punctuation(string line){
     
     return line;
 }
+
+//MARK: Serial
 
 void open_serial_files(string path, myStruct ms){
     
@@ -86,49 +88,25 @@ void open_serial_files(string path, myStruct ms){
     }
 }
 
-void something (string path, myStruct ms) {
-    
-    string line;
-    ifstream myfile (path);
-    ms.path = path;
-    
-    if (myfile.is_open()) {
-        
-        getline(myfile, line);
-
-        line = delete_punctuation(line);
-        int itr = 1;
-        string word = "";
-        stringstream sstr(line);
-        
-        while (sstr >> word) {
-            if (word != "br" && !word.empty() && word != "\0"){
-                ms.position = itr;
-                dictionary[word].push_back(ms);
-                itr++;
-            }
-        }
-        
-        myfile.close();
-        
-    } else {
-        cout << "cannot open file" << endl;
-    }
-    
-}
+//MARK: Multi
 
 struct INPUT {
-    string path;
+    int start;
+    int end;
+//    string path;
     myStruct ms;
+    vector<string> ppp; //paths
 };
 
 void *newFunc(void * arguments){
     
+//    pthread_mutex_lock(&m);
+    
     struct INPUT *in = (struct INPUT *)arguments;
     
     string line;
-    ifstream myfile (in->path);
-    in->ms.path = in->path;
+    ifstream myfile (in->ppp.at(in->start));
+    in->ms.path = in->ppp.at(in->start);
     
     if (myfile.is_open()) {
         
@@ -139,19 +117,29 @@ void *newFunc(void * arguments){
         string word = "";
         stringstream sstr(line);
         
+        
+        
         while (sstr >> word) {
             if (word != "br" && !word.empty() && word != "\0"){
                 in->ms.position = itr;
+                
                 dictionary[word].push_back(in->ms);
+                
                 itr++;
             }
         }
         
+
+        
         myfile.close();
+        
+        
         
     } else {
         cout << "cannot open file" << endl;
     }
+    
+//    pthread_mutex_unlock(&m);
     
     return NULL;
 }
@@ -162,21 +150,31 @@ void multi(myStruct ms, string path){
     
     pthread_t threads[2];
     
-    struct INPUT in;
     
     
-    int rc, end, n = 2;
+//    pthread_mutex_init(&m, NULL);
+    
+    int rc, n = 2;
     vector<string>* Paths = new vector<string>;
 
     for (auto& p : std::__fs::filesystem::directory_iterator(path)){
         Paths->push_back(p.path().string());
     }
     
+    int size = Paths->size();
+    
+    struct INPUT in[size];
+    
+
     
     
     for(int i = 0; i < 2; i++){
-        in.path = Paths->at(i);
-        rc = pthread_create(&threads[i], NULL, &newFunc, (void *)&in);
+//        in.path = Paths->at(i);
+//        in = malloc(sizeof(INPUT));
+        in[i].ppp = *Paths;
+        in[i].start = Paths->size() / (float)n * i;
+        in[i].end = Paths->size() / (float)n * (i + 1);
+        rc = pthread_create(&threads[i], NULL, &newFunc, (void *)&in[i]);
         if (rc != 0) {
             printf("Thread creation failed");
             exit(-1);
@@ -187,7 +185,10 @@ void multi(myStruct ms, string path){
         pthread_join(threads[i], NULL);
     }
 
+//    pthread_mutex_destroy(&m);
 }
+
+//MARK: Lookup query
 
 void find_query (string query) {
     
@@ -245,6 +246,10 @@ int main(int argc, const char * argv[]) {
                 }
                
                 
+                break;
+                
+            case 4:
+                dictionary.clear();
                 break;
                 
             default:
