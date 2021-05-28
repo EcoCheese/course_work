@@ -235,7 +235,7 @@ void lookup_query (string query) {
         cout << "There is no such query" << endl;
 }
 
-// MARK: main()
+// MARK: Driver function
 int main(int argc, const char * argv[]) {
     
     string path = "/Users/i.kangin/Downloads/course_work/datasets";
