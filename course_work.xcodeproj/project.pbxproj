@@ -41,7 +41,6 @@
 		75980AC1265D9E30006EF3B7 = {
 			isa = PBXGroup;
 			children = (
-				75980AD6265ECA5E006EF3B7 /* datasets */,
 				75980ACC265D9E31006EF3B7 /* course_work */,
 				75980ACB265D9E31006EF3B7 /* Products */,
 			);
@@ -61,13 +60,6 @@
 				75980ACD265D9E31006EF3B7 /* main.cpp */,
 			);
 			path = course_work;
-			sourceTree = "<group>";
-		};
-		75980AD6265ECA5E006EF3B7 /* datasets */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = datasets;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
