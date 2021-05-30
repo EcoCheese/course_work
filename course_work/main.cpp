@@ -56,6 +56,25 @@ string delete_punctuation(string line){
     return line;
 }
 
+// заполняем наш словарь данными, которые получили
+// со строки файла
+void fill_dictionary(string line, indexes ind) {
+    int itr = 1;    // итератор для определения позиции
+    string word = "";
+    stringstream sstr(line);
+    
+    while (sstr >> word) {
+        // в данном случае делаем проверку на тег <br></br>,
+        // которые не хотим видеть в нашем словаре
+        if (word != "br" && !word.empty() && word != "\0"){
+            ind.position = itr;
+            // заносит данные в словарь
+            dictionary[word].push_back(ind);
+            itr++;
+        }
+    }
+}
+
 // MARK: Serial
 // Реализация прямого метода инвертированного индекса.
 // Принимает значения пути к файлу и струкртуры
@@ -79,24 +98,11 @@ void serial_inverted_index(string path, indexes ind){
         ind.path = p.path();
         
         if (myfile.is_open()) {
-            
             getline(myfile, line);
- 
-            line = delete_punctuation(line);
-            int itr = 1;    // итератор для определения позиции
-            string word = "";
-            stringstream sstr(line);
             
-            while (sstr >> word) {
-                // в данном случае делаем проверку на тег <br></br>,
-                // которые не хотим видеть в нашем словаре
-                if (word != "br" && !word.empty() && word != "\0"){
-                    ind.position = itr;
-                    // заносит данные в словарь
-                    dictionary[word].push_back(ind);
-                    itr++;
-                }
-            }
+            line = delete_punctuation(line);
+            fill_dictionary(line, ind);
+            
             myfile.close();
         } else {
             cout << "Сannot open file" << endl;
@@ -139,22 +145,12 @@ void *thread_func(void * arguments){
             getline(file, line);
 
             line = delete_punctuation(line);
-            int itr = 1;
-            string word = "";
-            stringstream sstr(line);
             
             // блокировка к памяти мютексом
             pthread_mutex_lock(&m);
-            while (sstr >> word) {
-                // в данном случае делаем проверку на тег <br></br>,
-                // которые не хотим видеть в нашем словаре
-                if (word != "br" && !word.empty() && word != "\0"){
-                    in->ms.position = itr;
-                    // заносит данные в словарь
-                    dictionary[word].push_back(in->ms);
-                    itr++;
-                }
-            }
+            
+            fill_dictionary(line, in->ms);
+            
             // разблокировка мютекса
             pthread_mutex_unlock(&m);
             file.close();

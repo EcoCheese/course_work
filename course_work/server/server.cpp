@@ -96,16 +96,15 @@ void serial_inverted_index(std::string path, indexes ind){
     std::cout << "Time of serial: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 }
 
-// Function designed for chat between client and server.
+// Функция для общения между сервером и клиентом
 void func(int sockfd) {
     char buff[MAX];
-    // infinite loop for chat
+    
     while(true) {
         bzero(buff, MAX);
   
-        // read the message from client and copy it in buffer
+        // читает сообщение от клиента и помещает его в буфер
         read(sockfd, buff, sizeof(buff));
-        // print buffer which contains the client contents
         std::cout << "Finding word " << buff;
         
         std::string s;
@@ -117,6 +116,7 @@ void func(int sockfd) {
         std::vector<indexes> vect = dictionary.find(s)->second;
         std::string str;
         
+        // создаём строку ответа
         if (dictionary.count(s) > 0) {
             str = "Word \"" + s + "\" is found in " + std::to_string(vect.size()) + " files\n";
             std::cout << str;
@@ -124,7 +124,9 @@ void func(int sockfd) {
             str = "There is no such query\n";
         }
         
+        // помещаем строку в буффер char
         strcpy(buff, str.c_str());
+        // отправляем обратно на сервер
         write(sockfd, buff, sizeof(buff));
         
     }
@@ -142,7 +144,7 @@ int main(){
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
   
-    // socket create and verification
+    // создание и верификация сокета
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
         printf("socket creation failed...\n");
@@ -151,19 +153,19 @@ int main(){
         printf("Socket successfully created..\n");
     bzero(&servaddr, sizeof(servaddr));
   
-    // assign IP, PORT
+    // присоединение IP/PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
   
-    // Binding newly created socket to given IP and verification
+    // связывание сокета с данным IP
     if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
         printf("socket bind failed...\n");
         exit(0);
     } else
         printf("Socket successfully binded..\n");
   
-    // Now server is ready to listen and verification
+    // теперь сервер готов к прослушиванию
     if ((listen(sockfd, 5)) != 0) {
         printf("Listen failed...\n");
         exit(0);
@@ -171,7 +173,7 @@ int main(){
         printf("Server listening..\n");
     len = sizeof(cli);
   
-    // Accept the data packet from client and verification
+    // проверка на получение данных с клиента
     connfd = accept(sockfd, (SA*)&cli, (socklen_t*)&len);
     if (connfd < 0) {
         printf("server acccept failed...\n");
@@ -179,10 +181,10 @@ int main(){
     } else
         printf("server acccept the client...\n");
   
-    // Function for chatting between client and server
+    // функция для общение сервера и клиента
     func(connfd);
-  
-    // After chatting close the socket
+
+    // закрытие сокета
     close(sockfd);
 }
 
