@@ -13,10 +13,12 @@ cd course_work
 ```
 For serial version without client-server architecture:
 ```
+cd course_work
 gcc main.cpp -o main
 ```
 For client-server app with processes:
 ```
+cd client-server
 gcc server.cpp -o server
 gcc client.cpp -o client
 ```
