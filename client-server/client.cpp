@@ -30,6 +30,7 @@ void func(int sockfd) {
         write(sockfd, buff, sizeof(buff));
         bzero(buff, sizeof(buff));
         read(sockfd, buff, sizeof(buff));
+        printf("%s", buff);
         if ((strncmp(buff, "exit", 4)) == 0) {
             printf("Client Exit...\n");
             break;
@@ -38,8 +39,8 @@ void func(int sockfd) {
 }
   
 int main() {
-    int sockfd, connfd;
-    struct sockaddr_in servaddr, cli;
+    int sockfd;
+    struct sockaddr_in servaddr;
   
     // создание и верификация сокета
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
